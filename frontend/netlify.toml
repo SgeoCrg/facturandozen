@@ -1,0 +1,12 @@
+[build]
+  publish = "build"
+  command = "npm run build"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[build.environment]
+  REACT_APP_API_URL = "https://tu-backend-url.com/api"
+  REACT_APP_STRIPE_PUBLISHABLE_KEY = "pk_live_tu_stripe_publishable_key_produccion"

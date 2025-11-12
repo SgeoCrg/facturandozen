@@ -1,0 +1,121 @@
+# Configuración Nginx para facturandozen
+# Se copia a: ../../nginx/conf.d/facturandozen.conf
+
+upstream facturandozen_backend {
+    server facturandozen-backend:5000;
+    keepalive 32;
+}
+
+upstream facturandozen_frontend {
+    server facturandozen-frontend:80;
+    keepalive 32;
+}
+
+# HTTP -> HTTPS redirect
+server {
+    listen 80;
+    server_name facturandozen.com;
+    
+    # Let's Encrypt challenge
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        allow all;
+    }
+    
+    # Redirect a HTTPS (solo si certificado existe)
+    location / {
+        # Verificar si existe certificado SSL
+        if (-f /etc/nginx/ssl/live/facturandozen.com/fullchain.pem) {
+            return 301 https://$server_name$request_uri;
+        }
+        
+        # Si no hay certificado, servir normalmente
+        proxy_pass http://facturandozen_frontend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
+
+# HTTPS Server
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name facturandozen.com;
+
+    # SSL Certificates
+    ssl_certificate /etc/nginx/ssl/live/facturandozen.com/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/live/facturandozen.com/privkey.pem;
+    ssl_trusted_certificate /etc/nginx/ssl/live/facturandozen.com/chain.pem;
+
+    # SSL Configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    
+    # Rate limiting
+    limit_req zone=general_limit burst=20 nodelay;
+
+    # Logs
+    access_log /var/log/nginx/facturandozen-access.log main;
+    error_log /var/log/nginx/facturandozen-error.log warn;
+
+    # API Backend
+    location /api/ {
+        proxy_pass http://facturandozen_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Frontend React
+    location / {
+        proxy_pass http://facturandozen_frontend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Health check endpoint
+    location /health {
+        access_log off;
+        proxy_pass http://facturandozen_backend/api/health;
+    }
+}

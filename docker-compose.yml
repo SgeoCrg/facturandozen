@@ -1,0 +1,154 @@
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: facturandozen-backend
+    restart: unless-stopped
+    expose:
+      - "5000"
+    volumes:
+      - ./backend/logs:/app/logs
+      - ./backend/uploads:/app/uploads
+      - facturandozen-backend-data:/app/data
+    networks:
+      - facturandozen-network
+    env_file:
+      - .env
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    user: "1001:1001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "project=facturandozen"
+      - "environment=production"
+      - "managed=true"
+      - "component=backend"
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: facturandozen-frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    volumes:
+      - facturandozen-frontend-data:/usr/share/nginx/html
+    networks:
+      - facturandozen-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    user: "1001:1001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "project=facturandozen"
+      - "environment=production"
+      - "managed=true"
+      - "component=frontend"
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:15-alpine
+    container_name: facturandozen-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-facturando_zen}
+      POSTGRES_USER: ${DB_USER:-facturando_zen_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - facturandozen-db-data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - facturandozen-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    # No usar user: postgres necesita permisos de root para inicializar la base de datos
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-facturando_zen_user}"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "project=facturandozen"
+      - "component=database"
+
+  redis:
+    image: redis:7-alpine
+    container_name: facturandozen-redis
+    restart: unless-stopped
+    expose:
+      - "6379"
+    volumes:
+      - facturandozen-redis-data:/data
+    networks:
+      - facturandozen-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    user: "999:999"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "project=facturandozen"
+      - "component=cache"
+
+networks:
+  facturandozen-network:
+    driver: bridge
+    internal: false
+    ipam:
+      config:
+        - subnet: 172.22.2.0/24
+
+volumes:
+  facturandozen-backend-data:
+    driver: local
+  facturandozen-frontend-data:
+    driver: local
+  facturandozen-db-data:
+    driver: local
+  facturandozen-redis-data:
+    driver: local

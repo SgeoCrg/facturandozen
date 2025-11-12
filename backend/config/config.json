@@ -1,0 +1,26 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "postgres",
+    "database": "facturacion_dev",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "postgres",
+    "password": "postgres",
+    "database": "facturacion_test",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "facturando_zen_user",
+    "password": "FacturandoZen2024!",
+    "database": "facturando_zen",
+    "host": "postgres",
+    "dialect": "postgres",
+    "dialectOptions": {
+      "ssl": false
+    }
+  }
+}
