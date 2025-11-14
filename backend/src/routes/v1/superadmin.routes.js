@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const superadminController = require('../controllers/superadmin.controller');
-const { authenticateToken, requireSuperadmin } = require('../middleware/auth');
+const superadminController = require('../../controllers/superadmin.controller');
+const { authenticateToken, requireSuperadmin } = require('../../middleware/auth');
 
 router.use(authenticateToken);
 router.use(requireSuperadmin);
 
 router.get('/tenants', superadminController.getTenants);
+router.post('/tenants', superadminController.createTenant);
 router.get('/tenants/:id', superadminController.getTenantDetail);
 router.put('/tenants/:id/status', superadminController.updateTenantStatus);
 router.put('/tenants/:id/subscription', superadminController.updateSubscription);

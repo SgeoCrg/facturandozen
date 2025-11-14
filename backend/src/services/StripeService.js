@@ -1,4 +1,5 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripeKey = process.env.STRIPE_SECRET_KEY || (process.env.NODE_ENV === 'development' ? 'sk_test_placeholder' : null);
+const stripe = stripeKey ? require('stripe')(stripeKey) : null;
 const { Tenant, Subscription, Payment } = require('../models');
 const logger = require('../utils/logger');
 
@@ -6,6 +7,9 @@ class StripeService {
   constructor() {
     this.stripe = stripe;
     this.webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!stripe && process.env.NODE_ENV !== 'development') {
+      logger.warn('Stripe no configurado - funciones de pago deshabilitadas');
+    }
   }
 
   /**

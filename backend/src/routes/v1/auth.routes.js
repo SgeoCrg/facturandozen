@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const authController = require('../controllers/auth.controller');
-const { authenticateToken } = require('../middleware/auth');
+const authController = require('../../controllers/auth.controller');
+const { authenticateToken } = require('../../middleware/auth');
 const { 
   loginLimiter, 
   registerLimiter, 
   passwordResetLimiter,
   validateInput,
   validateHeaders 
-} = require('../middleware/security');
+} = require('../../middleware/security');
 
 router.post('/register', registerLimiter, validateHeaders, validateInput, authController.register);
 router.post('/login', loginLimiter, authController.login);

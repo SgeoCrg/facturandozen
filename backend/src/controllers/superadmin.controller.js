@@ -14,10 +14,159 @@ exports.getTenants = async (req, res) => {
       order: [['createdAt', 'DESC']]
     });
 
-    res.json({ tenants });
+    // Obtener información de debug: clientes, facturas y productos por tenant
+    const tenantsWithStats = await Promise.all(tenants.map(async (tenant) => {
+      const [customers, invoices, products] = await Promise.all([
+        db.Customer.findAll({
+          where: { tenantId: tenant.id },
+          attributes: ['id', 'name', 'nif', 'email', 'tenantId']
+        }),
+        db.Invoice.findAll({
+          where: { tenantId: tenant.id },
+          attributes: ['id', 'number', 'total', 'status', 'tenantId']
+        }),
+        db.Product.findAll({
+          where: { tenantId: tenant.id },
+          attributes: ['id', 'name', 'sku', 'price', 'isActive', 'tenantId']
+        })
+      ]);
+
+      return {
+        ...tenant.toJSON(),
+        debug: {
+          customers: customers.map(c => ({
+            id: c.id,
+            name: c.name,
+            nif: c.nif,
+            email: c.email,
+            tenantId: c.tenantId
+          })),
+          invoices: invoices.map(i => ({
+            id: i.id,
+            number: i.number,
+            total: i.total,
+            status: i.status,
+            tenantId: i.tenantId
+          })),
+          products: products.map(p => ({
+            id: p.id,
+            name: p.name,
+            sku: p.sku,
+            price: p.price,
+            isActive: p.isActive,
+            tenantId: p.tenantId
+          })),
+          counts: {
+            customers: customers.length,
+            invoices: invoices.length,
+            products: products.length
+          }
+        }
+      };
+    }));
+
+    res.json({ 
+      tenants: tenantsWithStats,
+      debug: {
+        totalTenants: tenants.length,
+        summary: tenantsWithStats.map(t => ({
+          tenantId: t.id,
+          tenantName: t.name,
+          tenantEmail: t.email,
+          customersCount: t.debug.counts.customers,
+          invoicesCount: t.debug.counts.invoices,
+          productsCount: t.debug.counts.products
+        }))
+      }
+    });
   } catch (error) {
     console.error('Error listando tenants:', error);
     res.status(500).json({ error: 'Error obteniendo tenants' });
+  }
+};
+
+exports.createTenant = async (req, res) => {
+  try {
+    const { name, nif, email, address, status = 'trial', adminName, adminPassword } = req.body;
+
+    if (!name || !nif || !email) {
+      return res.status(400).json({ error: 'Nombre, NIF y email son requeridos' });
+    }
+
+    // Verificar duplicados
+    const existingTenant = await db.Tenant.findOne({ where: { email: email.toLowerCase() } });
+    if (existingTenant) {
+      return res.status(400).json({ error: 'Email ya registrado' });
+    }
+
+    const existingNif = await db.Tenant.findOne({ where: { nif: nif.toUpperCase() } });
+    if (existingNif) {
+      return res.status(400).json({ error: 'NIF ya registrado' });
+    }
+
+    // Crear tenant
+    const tenant = await db.Tenant.create({
+      name,
+      nif: nif.toUpperCase(),
+      email: email.toLowerCase(),
+      address: address || '',
+      status: status || 'trial'
+    });
+
+    // Crear subscription STARTER (plan básico)
+    const subscription = await db.Subscription.create({
+      tenantId: tenant.id,
+      plan: 'starter',
+      status: 'active',
+      priceMonthly: 9,
+      maxInvoices: 100
+    });
+
+    // Crear usuario admin si se proporciona
+    let adminUser = null;
+    if (adminName && adminPassword) {
+      const bcrypt = require('bcryptjs');
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      adminUser = await db.User.create({
+        tenantId: tenant.id,
+        name: adminName,
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        role: 'admin'
+      });
+    }
+
+    // Crear settings por defecto
+    await db.Settings.create({
+      tenantId: tenant.id,
+      companyName: name,
+      nif: nif.toUpperCase(),
+      address: address || '',
+      phone: '',
+      email: email.toLowerCase(),
+      website: '',
+      logo: null,
+      invoicePrefix: 'F',
+      nextInvoiceNumber: 1,
+      defaultIva: 21,
+      verifactuEnabled: false
+    });
+
+    const createdTenant = await db.Tenant.findByPk(tenant.id, {
+      include: [{
+        model: db.Subscription,
+        as: 'subscription'
+      }]
+    });
+
+    res.status(201).json({
+      message: 'Empresa creada correctamente',
+      tenant: createdTenant,
+      adminCreated: !!adminUser
+    });
+  } catch (error) {
+    console.error('Error creando tenant:', error);
+    res.status(500).json({ error: 'Error creando empresa: ' + error.message });
   }
 };
 

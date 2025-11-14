@@ -23,7 +23,9 @@ RUN chown -R nginx:nginx /usr/share/nginx/html && \
     chown -R nginx:nginx /var/log/nginx && \
     chown -R nginx:nginx /etc/nginx/conf.d && \
     mkdir -p /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp /var/cache/nginx/fastcgi_temp /var/cache/nginx/uwsgi_temp /var/cache/nginx/scgi_temp && \
-    chown -R nginx:nginx /var/cache/nginx
+    chown -R nginx:nginx /var/cache/nginx && \
+    mkdir -p /run && \
+    chmod 777 /run
 
 # Exponer puerto
 EXPOSE 80

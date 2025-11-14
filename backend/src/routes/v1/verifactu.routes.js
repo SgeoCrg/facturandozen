@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const verifactuController = require('../controllers/verifactu.controller');
-const { authenticateToken } = require('../middleware/auth');
+const verifactuController = require('../../controllers/verifactu.controller');
+const { authenticateToken } = require('../../middleware/auth');
 
 const upload = multer({ 
   storage: multer.memoryStorage(),

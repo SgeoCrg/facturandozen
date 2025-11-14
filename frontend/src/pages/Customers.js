@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, Modal, Form, Alert, Badge, InputGroup } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const Customers = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -15,9 +18,19 @@ const Customers = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
 
+  // Bloquear acceso a superadmin
   useEffect(() => {
-    loadCustomers();
-  }, [search]);
+    if (user?.role === 'superadmin') {
+      navigate('/app/superadmin');
+      toast.info('Los superadministradores no pueden gestionar clientes. Crea empresas (tenants) y que ellas gestionen sus propios clientes.');
+    }
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (user?.role !== 'superadmin') {
+      loadCustomers();
+    }
+  }, [search, user]);
 
   const loadCustomers = async () => {
     try {

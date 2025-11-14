@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/user.controller');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const userController = require('../../controllers/user.controller');
+const { authenticateToken, requireAdmin } = require('../../middleware/auth');
 
 // ========== GESTIÓN DE USUARIOS ==========
 

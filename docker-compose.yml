@@ -60,7 +60,7 @@ services:
         reservations:
           cpus: '0.25'
           memory: 128M
-    user: "1001:1001"
+    # Nginx necesita ejecutarse como root para escribir en /run/nginx.pid
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/"]
       interval: 30s

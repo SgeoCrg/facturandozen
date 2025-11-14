@@ -12,6 +12,7 @@ const Superadmin = () => {
   const [showModal, setShowModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showTenantModal, setShowTenantModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [resettingPassword, setResettingPassword] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,6 +27,15 @@ const Superadmin = () => {
     tenantId: '',
     password: '',
     sendEmail: false
+  });
+  const [tenantForm, setTenantForm] = useState({
+    name: '',
+    nif: '',
+    email: '',
+    address: '',
+    status: 'trial',
+    adminName: '',
+    adminPassword: ''
   });
 
   useEffect(() => {
@@ -198,6 +208,48 @@ const Superadmin = () => {
     }
   };
 
+  // ========== FUNCIONES TENANTS ==========
+
+  const handleCreateTenant = () => {
+    setTenantForm({
+      name: '',
+      nif: '',
+      email: '',
+      address: '',
+      status: 'trial',
+      adminName: '',
+      adminPassword: ''
+    });
+    setShowTenantModal(true);
+  };
+
+  const handleSaveTenant = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = { ...tenantForm };
+      if (!payload.adminName || !payload.adminPassword) {
+        delete payload.adminName;
+        delete payload.adminPassword;
+      }
+
+      await api.post('/superadmin/tenants', payload);
+      toast.success('Empresa creada correctamente');
+      setShowTenantModal(false);
+      loadData();
+      setTenantForm({
+        name: '',
+        nif: '',
+        email: '',
+        address: '',
+        status: 'trial',
+        adminName: '',
+        adminPassword: ''
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Error creando empresa');
+    }
+  };
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '50vh' }}>
@@ -271,6 +323,9 @@ const Superadmin = () => {
           <Card className="mt-3">
             <Card.Header className="bg-white d-flex justify-content-between align-items-center">
               <h5 className="mb-0">Empresas (Tenants)</h5>
+              <Button size="sm" variant="primary" onClick={handleCreateTenant}>
+                <i className="bi bi-plus-circle me-1"></i>Nueva Empresa
+              </Button>
             </Card.Header>
             <Card.Body>
               <Table hover responsive>
@@ -619,6 +674,109 @@ const Superadmin = () => {
               </div>
             </Form>
           )}
+        </Modal.Body>
+      </Modal>
+
+      {/* Modal Crear Empresa (Tenant) */}
+      <Modal show={showTenantModal} onHide={() => setShowTenantModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Nueva Empresa</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleSaveTenant}>
+            <h6 className="mb-3">Información de la Empresa</h6>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Nombre de la Empresa *</Form.Label>
+              <Form.Control
+                type="text"
+                required
+                value={tenantForm.name}
+                onChange={(e) => setTenantForm({ ...tenantForm, name: e.target.value })}
+                placeholder="Ej: Mi Empresa SL"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>NIF *</Form.Label>
+              <Form.Control
+                type="text"
+                required
+                maxLength={9}
+                value={tenantForm.nif}
+                onChange={(e) => setTenantForm({ ...tenantForm, nif: e.target.value.toUpperCase() })}
+                placeholder="Ej: B12345678"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Email *</Form.Label>
+              <Form.Control
+                type="email"
+                required
+                value={tenantForm.email}
+                onChange={(e) => setTenantForm({ ...tenantForm, email: e.target.value })}
+                placeholder="contacto@empresa.com"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Dirección</Form.Label>
+              <Form.Control
+                type="text"
+                value={tenantForm.address}
+                onChange={(e) => setTenantForm({ ...tenantForm, address: e.target.value })}
+                placeholder="Calle, número, ciudad..."
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Estado Inicial</Form.Label>
+              <Form.Select
+                value={tenantForm.status}
+                onChange={(e) => setTenantForm({ ...tenantForm, status: e.target.value })}
+              >
+                <option value="trial">Trial</option>
+                <option value="active">Activo</option>
+                <option value="suspended">Suspendido</option>
+              </Form.Select>
+            </Form.Group>
+
+            <hr className="my-4" />
+            <h6 className="mb-3">Usuario Administrador (Opcional)</h6>
+            <p className="text-muted small mb-3">
+              Si no creas un admin ahora, la empresa podrá registrarse normalmente más tarde.
+            </p>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Nombre del Administrador</Form.Label>
+              <Form.Control
+                type="text"
+                value={tenantForm.adminName}
+                onChange={(e) => setTenantForm({ ...tenantForm, adminName: e.target.value })}
+                placeholder="Ej: Juan Pérez"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Contraseña del Administrador</Form.Label>
+              <Form.Control
+                type="password"
+                value={tenantForm.adminPassword}
+                onChange={(e) => setTenantForm({ ...tenantForm, adminPassword: e.target.value })}
+                placeholder="Mínimo 8 caracteres"
+              />
+            </Form.Group>
+
+            <div className="d-flex justify-content-end gap-2 mt-4">
+              <Button variant="secondary" onClick={() => setShowTenantModal(false)}>
+                Cancelar
+              </Button>
+              <Button variant="primary" type="submit">
+                Crear Empresa
+              </Button>
+            </div>
+          </Form>
         </Modal.Body>
       </Modal>
     </>

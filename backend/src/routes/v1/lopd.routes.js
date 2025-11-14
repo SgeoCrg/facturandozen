@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const lopdController = require('../controllers/lopd.controller');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const lopdController = require('../../controllers/lopd.controller');
+const { authenticateToken, requireAdmin } = require('../../middleware/auth');
 const { 
   auditDataAccess, 
   auditCreate, 
   auditUpdate, 
   auditView,
   logRequestInfo 
-} = require('../middleware/audit');
+} = require('../../middleware/audit');
 
 // Middleware para todas las rutas
 router.use(authenticateToken);

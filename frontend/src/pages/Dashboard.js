@@ -5,7 +5,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
-  const { subscription } = useAuth();
+  const { subscription, user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -78,7 +78,7 @@ const Dashboard = () => {
       </Row>
 
       {/* Stat Cards */}
-      <Row className="mb-4 g-3">
+      <Row className="mb-4 g-3" style={{ alignItems: 'stretch' }}>
         <Col md={3}>
           <div className="stat-card slide-in-right" style={{ animationDelay: '0.1s' }}>
             <div className="icon primary">
@@ -101,8 +101,11 @@ const Dashboard = () => {
               <i className="bi bi-people"></i>
             </div>
             <div className="value">{stats?.overview?.totalCustomers || 0}</div>
-            <div className="label">Clientes</div>
-            <Link to="/app/customers" className="btn btn-sm btn-success mt-3 w-100">
+            <div className="label">{user?.role === 'superadmin' ? 'Empresas' : 'Clientes'}</div>
+            <div className="small text-muted mt-2" style={{ minHeight: '1.5rem' }}>
+              &nbsp;
+            </div>
+            <Link to={user?.role === 'superadmin' ? '/app/superadmin' : '/app/customers'} className="btn btn-sm btn-success mt-3 w-100">
               Gestionar <i className="bi bi-arrow-right ms-1"></i>
             </Link>
           </div>
@@ -115,6 +118,9 @@ const Dashboard = () => {
             </div>
             <div className="value">{stats?.overview?.totalProducts || 0}</div>
             <div className="label">Productos</div>
+            <div className="small text-muted mt-2" style={{ minHeight: '1.5rem' }}>
+              &nbsp;
+            </div>
             <Link to="/app/products" className="btn btn-sm btn-warning mt-3 w-100">
               Gestionar <i className="bi bi-arrow-right ms-1"></i>
             </Link>
@@ -131,6 +137,9 @@ const Dashboard = () => {
             <div className="small text-muted mt-2">
               Este mes: {parseFloat(stats?.overview?.monthRevenue || 0).toFixed(0)} €
             </div>
+            <Link to="/app/invoices" className="btn btn-sm btn-danger mt-3 w-100">
+              Ver facturas <i className="bi bi-arrow-right ms-1"></i>
+            </Link>
           </div>
         </Col>
       </Row>

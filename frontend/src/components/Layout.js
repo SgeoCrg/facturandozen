@@ -30,7 +30,7 @@ const Layout = () => {
         onToggle={() => setExpanded(!expanded)}
       >
         <Container fluid>
-          <Navbar.Brand as={Link} to="/app/dashboard" className="fw-bold d-flex align-items-center">
+          <Navbar.Brand as={Link} to={user?.role === 'superadmin' ? '/app/superadmin' : '/app/dashboard'} className="fw-bold d-flex align-items-center">
             <img src="/logo-optimized.png" alt="Facturando Zen" height="32" className="me-2" style={{ objectFit: 'contain' }} />
             Facturando Zen
           </Navbar.Brand>

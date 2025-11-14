@@ -467,6 +467,9 @@ body {
   transition: var(--transition);
   position: relative;
   overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .stat-card::before {
@@ -532,6 +535,12 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 500;
+}
+
+.stat-card .btn,
+.stat-card a.btn {
+  margin-top: auto;
+  align-self: flex-end;
 }
 
 /* LANDING PAGE */

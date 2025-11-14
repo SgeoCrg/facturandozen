@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Card, Form, Button, Alert, ProgressBar, Row, Col } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const WIZARD_STORAGE_KEY = 'customerWizardDraft_v1';
 
@@ -24,6 +25,7 @@ const initialFormState = {
 
 const CustomerWizard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [stepIndex, setStepIndex] = useState(0);
   const [formData, setFormData] = useState(initialFormState);
   const [error, setError] = useState('');
@@ -31,6 +33,14 @@ const CustomerWizard = () => {
 
   const currentStep = useMemo(() => stepsConfig[stepIndex], [stepIndex]);
   const progress = useMemo(() => Math.round(((stepIndex + 1) / stepsConfig.length) * 100), [stepIndex]);
+
+  // Bloquear acceso a superadmin
+  useEffect(() => {
+    if (user?.role === 'superadmin') {
+      navigate('/app/superadmin');
+      toast.info('Los superadministradores no pueden crear clientes. Crea empresas (tenants) y que ellas creen sus propios clientes.');
+    }
+  }, [user, navigate]);
 
   // Cargar borrador
   useEffect(() => {
@@ -46,6 +56,7 @@ const CustomerWizard = () => {
       // ignorar errores de lectura
     }
   }, []);
+
 
   // Guardado automático del borrador
   useEffect(() => {

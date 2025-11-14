@@ -7,6 +7,7 @@ router.use(authenticateToken);
 router.use(requireSuperadmin);
 
 router.get('/tenants', superadminController.getTenants);
+router.post('/tenants', superadminController.createTenant);
 router.get('/tenants/:id', superadminController.getTenantDetail);
 router.put('/tenants/:id/status', superadminController.updateTenantStatus);
 router.put('/tenants/:id/subscription', superadminController.updateSubscription);

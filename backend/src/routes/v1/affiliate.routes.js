@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const affiliateController = require('../controllers/affiliate.controller');
-const { authenticateToken, requireSuperadmin, requireAuth } = require('../middleware/auth');
+const affiliateController = require('../../controllers/affiliate.controller');
+const { authenticateToken, requireSuperadmin, requireAuth } = require('../../middleware/auth');
 
 // Rutas protegidas para superadmin
 router.use(authenticateToken);

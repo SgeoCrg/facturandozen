@@ -47,6 +47,25 @@ exports.create = async (req, res) => {
       return res.status(400).json({ error: 'Nombre y NIF requeridos' });
     }
 
+    // Superadmin no puede crear clientes directamente (solo crea tenants/empresas)
+    if (req.user.role === 'superadmin') {
+      return res.status(403).json({ 
+        error: 'Los superadministradores no pueden crear clientes. Debes crear empresas (tenants) y que ellas creen sus propios clientes.' 
+      });
+    }
+
+    // Usuario normal debe tener tenantId
+    if (!req.user.tenantId) {
+      logger.warn('Intento de crear cliente sin tenantId', { 
+        userId: req.user.id, 
+        role: req.user.role,
+        email: req.user.email 
+      });
+      return res.status(403).json({ 
+        error: 'No puedes crear clientes. Solo usuarios asociados a una empresa pueden crear clientes.' 
+      });
+    }
+
     const normalizedNif = DataStandardizationService.normalizeNIF(nif);
     if (!DataStandardizationService.validateNIF(normalizedNif)) {
       return res.status(400).json({ error: 'NIF/CIF inválido' });
