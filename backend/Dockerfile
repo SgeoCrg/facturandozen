@@ -34,10 +34,10 @@ COPY . .
 RUN mkdir -p logs uploads
 
 # Cambiar ownership
-RUN chown -R node:node /app
+RUN chown -R nodejs:nodejs /app
 
 # Cambiar a usuario no-root
-USER node
+USER nodejs
 
 # Exponer puerto
 EXPOSE 5000
