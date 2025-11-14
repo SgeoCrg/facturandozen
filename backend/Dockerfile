@@ -12,13 +12,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Crear directorio de trabajo
 WORKDIR /app
 
+# Crear usuario no-root primero
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
 # Copiar package files
 COPY package*.json ./
 
-# Instalar dependencias (forzando compilación de módulos nativos)
+# Instalar dependencias (forzando compilación de módulos nativos desde cero)
 ENV npm_config_build_from_source=true
-RUN npm ci --only=production && \
+RUN rm -rf node_modules package-lock.json && \
+    npm install --only=production && \
     npm rebuild bcrypt --build-from-source && \
+    rm -rf /tmp/* && \
     npm cache clean --force
 
 # Copiar código fuente
@@ -26,10 +32,6 @@ COPY . .
 
 # Crear directorios necesarios
 RUN mkdir -p logs uploads
-
-# Crear usuario no-root
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
 
 # Cambiar ownership
 RUN chown -R node:node /app
