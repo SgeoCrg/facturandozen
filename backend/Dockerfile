@@ -21,8 +21,8 @@ COPY package*.json ./
 
 # Instalar dependencias (forzando compilación de módulos nativos desde cero)
 ENV npm_config_build_from_source=true
-RUN rm -rf node_modules package-lock.json && \
-    npm install --only=production && \
+RUN rm -rf node_modules && \
+    npm ci --only=production && \
     npm rebuild bcrypt --build-from-source && \
     rm -rf /tmp/* && \
     npm cache clean --force
