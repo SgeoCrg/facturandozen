@@ -14,7 +14,7 @@
     "dialect": "postgres"
   },
   "production": {
-    "username": "facturando_zen_user",
+    "username": "facturandozen_user",
     "password": "FacturandoZen2024!",
     "database": "facturando_zen",
     "host": "postgres",
